@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f18">
+<title>Archivio · Timeline camere</title>
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+</head>
+<body>
+
+<button id="menu-toggle" class="menu-toggle" aria-label="Apri menu">&#9776;</button>
+<div id="sidebar-overlay" class="sidebar-overlay" hidden></div>
+
+<div class="app">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <div>
+        <h1>Archivio</h1>
+        <p>registrazioni locali</p>
+      </div>
+      <button id="sidebar-close" class="sidebar-close" aria-label="Chiudi menu">&times;</button>
+    </div>
+
+    <div class="section">
+      <h2>Camere</h2>
+      <ul id="camera-list" class="camera-list"></ul>
+    </div>
+
+    <div class="section">
+      <h2>Giorni disponibili</h2>
+      <div id="day-list" class="day-list"></div>
+    </div>
+
+    <div class="sidebar-actions">
+      <a href="{{ url_for('wall', group=1) }}" class="sync-btn wall-link">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        Livewall 1
+      </a>
+      <a href="{{ url_for('wall', group=2) }}" class="sync-btn wall-link">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        Livewall 2
+      </a>
+
+      <button id="sync-btn" class="sync-btn">
+        <span class="sync-icon">&#8635;</span> Aggiorna indice
+      </button>
+      <p id="sync-status" class="sync-status"></p>
+
+      {% if auth_enabled %}
+      <form method="POST" action="{{ url_for('logout') }}">
+        <button type="submit" class="logout-btn">Esci</button>
+      </form>
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <header class="player-bar">
+      <div class="now-playing">
+        <span id="now-label" class="now-label">Seleziona un momento sulla timeline</span>
+        <span id="now-time" class="now-time"></span>
+      </div>
+      <div class="player-actions">
+        <button id="live-toggle" class="chip" title="Guarda la diretta" hidden>&#9679; diretta</button>
+        <button id="autoplay-toggle" class="chip active" title="Riproduzione continua">&#9654; continuo</button>
+      </div>
+    </header>
+
+    <div class="video-wrap">
+      <video id="player" controls preload="none"></video>
+    </div>
+
+    <section class="timeline-section">
+      <div class="timeline-header">
+        <h2 id="timeline-date">—</h2>
+        <span id="timeline-coverage" class="coverage-label"></span>
+      </div>
+      <div id="timeline" class="timeline">
+        <div id="timeline-track" class="timeline-track"></div>
+        <div id="timeline-cursor" class="timeline-cursor" hidden></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+}
+</script>
+</body>
+</html>

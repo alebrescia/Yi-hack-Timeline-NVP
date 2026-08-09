@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f18">
+<title>Accedi · Archivio camere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+
+<div class="login-wrap">
+  <form class="login-card" method="POST" action="{{ url_for('login') }}">
+    <div class="brand login-brand">
+      <span class="brand-dot"></span>
+      <div>
+        <h1>Archivio</h1>
+        <p>registrazioni locali</p>
+      </div>
+    </div>
+
+    {% if error %}
+    <p class="login-error">{{ error }}</p>
+    {% endif %}
+
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <label class="login-label" for="username">Utente</label>
+    <input class="login-input" type="text" id="username" name="username" autocomplete="username" autofocus required>
+
+    <label class="login-label" for="password">Password</label>
+    <input class="login-input" type="password" id="password" name="password" autocomplete="current-password" required>
+
+    <button class="login-button" type="submit">Accedi</button>
+  </form>
+</div>
+
+</body>
+</html>

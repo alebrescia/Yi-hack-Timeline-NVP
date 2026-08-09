@@ -1,0 +1,56 @@
+{
+  "cameras": [
+    {
+      "id": 1,
+      "name": "Ingresso",
+      "icon": "porta",
+      "host": "192.168.1.101",
+      "port": 21,
+      "user": "root",
+      "password": "",
+      "live": {
+        "rtsp_url": "rtsp://192.168.1.101:8554/unicast",
+        "user": "liveuser",
+        "password": "livepass"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Giardino",
+      "host": "192.168.1.102",
+      "port": 21,
+      "user": "root",
+      "password": "",
+      "live": {
+        "rtsp_url": "rtsp://192.168.1.102:8554/unicast",
+        "user": "liveuser",
+        "password": "livepass"
+      }
+    }
+  ],
+  "sync_interval_seconds": 60,
+  "cache_dir": "cache",
+  "db_path": "index.db",
+  "ftp_root": "/tmp/sd/record",
+  "hls_dir": "hls_cache",
+  "live_walls": {
+    "1": [1, 2, 3, 4],
+    "2": [5, 6, 7, 8]
+  },
+  "live_hls_segment_seconds": 2,
+  "live_hls_list_size": 6,
+  "camera_timezone": "UTC",
+  "timezone": "Europe/Rome",
+  "cache_max_mb": 2048,
+  "cache_max_age_hours": 0,
+  "auth": {
+    "enabled": false,
+    "username": "admin",
+    "password_hash": ""
+  },
+  "https": {
+    "enabled": false,
+    "cert": "cert.pem",
+    "key": "key.pem"
+  }
+}

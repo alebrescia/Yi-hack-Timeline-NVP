@@ -1,0 +1,15 @@
+{
+  "name": "Archivio camere",
+  "short_name": "Archivio",
+  "description": "Timeline delle registrazioni e diretta delle camere Yi-hack",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0f18",
+  "theme_color": "#0b0f18",
+  "icons": [
+    { "src": "/static/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

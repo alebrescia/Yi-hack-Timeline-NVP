@@ -1,0 +1,20 @@
+[Unit]
+Description=Archivio timeline camere Yi-hack
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/yicam-timeline_v2
+ExecStart=/home/pi/yicam-timeline_v2/venv/bin/python3 /home/pi/yicam-timeline_v2/app.py
+Restart=on-failure
+RestartSec=5
+
+# Assicura che, quando il servizio viene fermato/riavviato, systemd chiuda
+# anche gli eventuali processi ffmpeg avviati per la diretta (altrimenti
+# potrebbero restare "orfani" in background).
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="it" class="wall-html">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f18">
+<title>Livewall {{ group }} · Archivio camere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"></script>
+</head>
+<body class="wall-body">
+
+<header class="wall-header">
+  <div class="wall-nav-group">
+    <a href="{{ url_for('index') }}" class="chip wall-chip" title="Torna alla timeline">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Timeline
+    </a>
+    <a href="{{ url_for('wall', group=1) }}" class="chip wall-chip{{ ' active' if group == 1 else '' }}">Livewall 1</a>
+    <a href="{{ url_for('wall', group=2) }}" class="chip wall-chip{{ ' active' if group == 2 else '' }}">Livewall 2</a>
+  </div>
+  <h1>Livewall {{ group }}</h1>
+</header>
+
+<div class="wall-grid">
+  {% for cam in slots %}
+    <div class="wall-tile"{% if cam and cam.live %} data-camera-id="{{ cam.id }}"{% endif %}>
+      {% if not cam %}
+        <div class="wall-empty">Nessuna camera<br><span class="wall-empty-sub">slot non configurato</span></div>
+      {% elif not cam.live %}
+        <div class="wall-empty">{{ cam.name }}<br><span class="wall-empty-sub">diretta non configurata</span></div>
+      {% else %}
+        <video muted playsinline autoplay></video>
+        <span class="wall-label">{{ cam.name }}</span>
+        <span class="wall-status" data-status="connecting">● connessione…</span>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+
+<script src="{{ url_for('static', filename='wall.js') }}"></script>
+</body>
+</html>
