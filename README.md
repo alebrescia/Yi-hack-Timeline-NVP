@@ -1,6 +1,6 @@
 <img width="75%" height="75%" alt="live_garden" src="https://github.com/user-attachments/assets/76d32c68-b182-4077-b92e-b8532b3acf97" />
 
-# Yi-hack-Timeline-NVP
+# Yi-hack-Timeline-NVP ( Network Video Player )
 
 A lightweight self-hosted web server that connects over FTP to your Yi
 cameras running [yi-hack](https://github.com/roleoroleo) custom firmware,
