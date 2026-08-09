@@ -644,3 +644,6 @@ yi-hack-MStar/yi-hack-Allwinner filename conventions but should be
 adaptable to other cameras with a similar recording folder structure.
 Pull requests and issues are welcome, but there's no guarantee of active
 maintenance.
+The implemented security is not suitable for production use. 
+You should not expose this service publicly (or do at your own risk). 
+My advice is to use a VPN!
