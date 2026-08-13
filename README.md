@@ -1,6 +1,4 @@
-<img width="75%" height="75%" alt="live_garden" src="https://github.com/user-attachments/assets/76d32c68-b182-4077-b92e-b8532b3acf97" />
-
-# Yi-hack-Timeline-NVP ( Network Video Player )
+# Yi-hack-Timeline-NVP
 
 A lightweight self-hosted web server that connects over FTP to your Yi
 cameras running [yi-hack](https://github.com/roleoroleo) custom firmware,
@@ -41,7 +39,10 @@ Built around the folder/file structure yi-hack writes to the SD card:
 - [Live wall (multi-camera view)](#live-wall-multi-camera-view)
 - [Mobile use & installing as an app](#mobile-use--installing-as-an-app)
 - [Camera icons](#camera-icons)
+- [Settings page](#settings-page)
+- [Maintenance: rebooting cameras over SSH](#maintenance-rebooting-cameras-over-ssh)
 - [Easy customizations](#easy-customizations)
+- [Versioning & changelog](#versioning--changelog)
 - [Credits](#credits)
 - [License](#license)
 - [Disclaimer](#disclaimer)
@@ -119,10 +120,14 @@ you already have at home.
 - **Automatic timezone handling** — DST-aware conversion from the
   camera's clock (usually UTC) to your local time.
 - **systemd service** unit included for running unattended on boot.
+- **Settings page** — edit every `config.json` parameter (cameras
+  included) from the browser, with a Basic/Advanced switch.
+- **Remote maintenance** — reboot any camera over SSH with one click,
+  from the Settings page.
 
 ## Screenshots
 
-<img width="40%" height="40%" alt="bzNjk4F3Ho" src="https://github.com/user-attachments/assets/e5d024b3-1941-498a-80ad-6eb17b21b906" /> <img width="40%" height="40%" alt="live_wall" src="https://github.com/user-attachments/assets/9f6ec07b-7263-449b-af86-908fc6c4823e" />
+*(Add your own screenshots here — desktop timeline, mobile view, live wall.)*
 
 ## Quick start
 
@@ -412,7 +417,7 @@ configuration needed — this mirrors 1:1 how the camera itself manages SD
 space (it deletes whole hours, not individual scattered files).
 
 ## Clip locking & download
-<img width="424" height="298" alt="lock_clip" src="https://github.com/user-attachments/assets/229ad434-f037-4504-afcf-117c7c8f884e" />
+
 On any clip in the timeline:
 - **Right-click** (desktop) or **long-press ~0.5s** (mobile, with a
   confirmation vibration if supported) opens a context menu with two
@@ -533,6 +538,10 @@ erroring.
   disappear); tap the same tile again — or press **Esc** on desktop — to
   return to the grid. This is a CSS-based "fake" fullscreen, not the
   browser's real Fullscreen API: instant, no permission prompts.
+- **Per-tile reload button** (small circular icon, top-right of each live
+  tile): useful when one camera errors out or gets stuck while the others
+  are fine — stops and restarts just that stream, without touching the
+  others or reloading the whole page.
 - On **desktop** the grid fills the available screen space exactly,
   maximizing each tile. On **mobile** the tiles stack in a column and
   scroll normally with the page.
@@ -614,6 +623,55 @@ respective icons, "cortile" or "esterno" → sun/yard.
 If neither applies, a **generic camera icon** is used as a fallback —
 never an error, just a less specific icon.
 
+## Settings page
+
+Gear-icon button ⚙ at the bottom of the sidebar (`/settings`): lets you
+edit every `config.json` parameter — cameras included (add, remove, edit
+host/credentials/icon/live settings) — without ever touching the file by
+hand.
+
+- **Basic / Advanced switch** at the top of the page (default: Basic). In
+  Basic mode only cameras, timezone, and Live wall are visible — the
+  essentials for day-to-day management. Switching to Advanced also shows
+  indexing/cache, HLS live, HTTPS, and the Maintenance block (see below).
+  The choice is remembered in the browser.
+- **Passwords left blank aren't changed** — the already-saved value stays
+  (even if encrypted by `encrypt_config.py`).
+- The `auth` block (login username/password hash) is **never editable
+  from here** — it stays managed only by `set_password.py` from the
+  terminal, for security.
+- After saving, the server attempts an automatic restart
+  (`sudo systemctl restart yicam-timeline`, works if running as a
+  service) and the page reloads itself after a few seconds. If not
+  running as a service, the file is still saved but the restart needs to
+  be done manually.
+
+## Maintenance: rebooting cameras over SSH
+
+In the **Maintenance** block under Settings (`/settings`, switch to
+Advanced), a "Reboot" button for each camera triggers a remote reboot over
+SSH, using the **same FTP credentials** already configured for that
+camera.
+
+- The command run is `busybox reboot -f` (verified working on
+  yi-hack-MStar; the plain `reboot` command isn't always enough depending
+  on the firmware build).
+- Requires explicit confirmation before proceeding (browser popup), to
+  avoid accidental reboots.
+- If a camera's SSH port isn't the standard 22, add `"ssh_port": <number>`
+  to that camera in `config.json` (optional field, not exposed in the
+  UI).
+
+**Scheduled reboots**: for a scheduled reboot (e.g. every night), the
+cleanest solution is yi-hack's **own built-in crontab** (Settings → Expert
+→ Crontab in the camera's own web UI), not this button. Example, reboot
+every Monday/Wednesday/Friday at 12:15:
+```
+15 12 * * 1,3,5 busybox reboot -f
+```
+Running on the camera itself, this keeps working even if this project's
+server is off or unreachable.
+
 ## Easy customizations
 
 - **Sync interval**: `sync_interval_seconds` in `config.json`.
@@ -621,6 +679,14 @@ never an error, just a less specific icon.
   `"ftp_root": "/different/path"` to that camera's entry in `config.json`.
 - **Cache cleanup**: the `cache/` folder can be safely emptied at any time;
   files get re-downloaded from the camera on next use.
+
+## Versioning & changelog
+
+The current version number appears at the bottom of the Settings page
+(`/settings`), alongside the release date — it's also a clickable link to
+`/changelog`, where every change from this version onward gets logged.
+Versioning follows a free-form `MAJOR.MINOR.PATCH` scheme (e.g. `0.9.20`),
+updated by hand in `changelog.py` on each release.
 
 ## Credits
 
@@ -644,6 +710,3 @@ yi-hack-MStar/yi-hack-Allwinner filename conventions but should be
 adaptable to other cameras with a similar recording folder structure.
 Pull requests and issues are welcome, but there's no guarantee of active
 maintenance.
-The implemented security is not suitable for production use. 
-You should not expose this service publicly (or do at your own risk). 
-My advice is to use a VPN!

@@ -26,7 +26,7 @@
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(() => {});
-        if (status) status.remove();
+        hideStatus(status);
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -42,7 +42,7 @@
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = src;
       video.play().catch(() => {});
-      if (status) status.remove();
+      hideStatus(status);
     } else {
       setError(status, 'HLS non supportato da questo browser');
     }
@@ -50,12 +50,68 @@
 
   function setError(status, message) {
     if (!status) return;
+    status.hidden = false;
     status.textContent = '● errore';
     status.dataset.status = 'error';
     if (message) status.title = message;
   }
 
+  function hideStatus(status) {
+    if (status) status.hidden = true;
+  }
+
+  function showConnecting(status) {
+    if (!status) return;
+    status.hidden = false;
+    status.textContent = '● connessione…';
+    status.dataset.status = 'connecting';
+    status.title = '';
+  }
+
   tiles.forEach(startTile);
+
+  // Pulsantino di ricarica per singola tile: utile quando una diretta va in
+  // errore o resta bloccata senza dover ricaricare l'intera pagina (e con
+  // essa anche le altre camere che stavano andando bene).
+  async function retryTile(tile) {
+    const cameraId = tile.dataset.cameraId;
+    const btn = tile.querySelector('.wall-retry-btn');
+    const status = tile.querySelector('.wall-status');
+    const video = tile.querySelector('video');
+
+    if (btn) { btn.disabled = true; btn.classList.add('spinning'); }
+    showConnecting(status);
+
+    if (hlsInstances[cameraId]) {
+      try { hlsInstances[cameraId].destroy(); } catch (_) {}
+      delete hlsInstances[cameraId];
+    }
+    if (video) {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    }
+
+    try {
+      await fetch(`/api/live/${cameraId}/stop`, { method: 'POST' });
+    } catch (_) {
+      // proviamo comunque a far ripartire lo stream
+    }
+
+    await startTile(tile);
+
+    if (btn) { btn.disabled = false; btn.classList.remove('spinning'); }
+  }
+
+  tiles.forEach((tile) => {
+    const retryBtn = tile.querySelector('.wall-retry-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // non deve anche espandere/collassare la tile
+        retryTile(tile);
+      });
+    }
+  });
 
   // Tocco/click su una tile: la espande a schermo intero (nasconde le
   // altre). Ripremendo la stessa tile si torna alla griglia a 4.

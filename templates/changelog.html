@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f18">
+<title>Changelog · Archivio camere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="settings-body">
+
+<header class="wall-header">
+  <div class="wall-nav-group">
+    <a href="{{ url_for('index') }}" class="chip wall-chip" title="Torna alla timeline">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Timeline
+    </a>
+    <a href="{{ url_for('settings') }}" class="chip wall-chip">⚙ Impostazioni</a>
+  </div>
+  <h1>Changelog</h1>
+</header>
+
+<div class="settings-wrap">
+  <div class="changelog-list">
+    {% for entry in entries %}
+    <div class="changelog-entry">
+      <div class="changelog-entry-header">
+        <span class="changelog-version">v{{ entry.version }}</span>
+        <span class="changelog-date">{{ entry.date_formatted }}</span>
+      </div>
+      <ul class="changelog-changes">
+        {% for change in entry.changes %}
+        <li>{{ change }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+</body>
+</html>

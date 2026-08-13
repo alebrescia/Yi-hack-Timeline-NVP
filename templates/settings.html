@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f18">
+<title>Impostazioni · Archivio camere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="settings-body">
+
+<header class="wall-header">
+  <div class="wall-nav-group">
+    <a href="{{ url_for('index') }}" class="chip wall-chip" title="Torna alla timeline">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Timeline
+    </a>
+  </div>
+  <h1>Impostazioni</h1>
+  {% if auth_enabled %}
+  <form method="POST" action="{{ url_for('logout') }}" style="margin-left:auto">
+    <button type="submit" class="logout-btn">Esci</button>
+  </form>
+  {% endif %}
+</header>
+
+<div class="settings-wrap">
+
+  <div id="save-banner" class="save-banner" hidden></div>
+
+  <!-- Switch Basic / Advanced -->
+  <div class="settings-mode-bar">
+    <div class="settings-mode-label">
+      <strong>Modalità</strong><br>
+      In modalità <em>Basic</em> sono visibili solo le impostazioni essenziali.
+    </div>
+    <label class="mode-switch" title="Modalità avanzata">
+      <input type="checkbox" id="advanced-toggle">
+      <span class="mode-switch-track"></span>
+      <span class="mode-switch-text-off">Basic</span>
+      <span class="mode-switch-text-on">Advanced</span>
+    </label>
+  </div>
+
+  <!-- ===== CAMERE ===== -->
+  <section class="settings-section">
+    <h2 class="settings-h2">Telecamere</h2>
+    <p class="settings-hint">Le password lasciate vuote non verranno modificate (verrà mantenuto il valore già salvato).</p>
+    <div id="cameras-list"></div>
+    <button class="settings-add-btn" id="add-camera-btn">+ Aggiungi telecamera</button>
+  </section>
+
+  <!-- ===== PARAMETRI GENERALI ===== -->
+  <section class="settings-section" data-advanced>
+    <h2 class="settings-h2">Indicizzazione e cache</h2>
+    <div class="settings-grid">
+      <label class="settings-label">Intervallo di sync (secondi)
+        <input class="settings-input" type="number" id="sync_interval_seconds" min="5" value="{{ config.sync_interval_seconds | default(60) }}">
+      </label>
+      <label class="settings-label">Dimensione massima cache video (MB, 0=disabilitato)
+        <input class="settings-input" type="number" id="cache_max_mb" min="0" value="{{ config.cache_max_mb | default(2048) }}">
+      </label>
+      <label class="settings-label">Età massima cache video (ore, 0=disabilitato)
+        <input class="settings-input" type="number" id="cache_max_age_hours" min="0" value="{{ config.cache_max_age_hours | default(0) }}">
+      </label>
+      <label class="settings-label">Cartella cache video
+        <input class="settings-input" type="text" id="cache_dir" value="{{ config.cache_dir | default('cache') }}">
+      </label>
+      <label class="settings-label">Percorso database
+        <input class="settings-input" type="text" id="db_path" value="{{ config.db_path | default('index.db') }}">
+      </label>
+      <label class="settings-label">Percorso FTP predefinito (per tutte le camere)
+        <input class="settings-input" type="text" id="ftp_root" value="{{ config.ftp_root | default('/tmp/sd/record') }}">
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== FUSO ORARIO ===== -->
+  <section class="settings-section">
+    <h2 class="settings-h2">Fuso orario</h2>
+    <div class="settings-grid">
+      <label class="settings-label">Fuso orario della camera (solitamente UTC)
+        <input class="settings-input" type="text" id="camera_timezone" value="{{ config.camera_timezone | default('UTC') }}">
+      </label>
+      <label class="settings-label">Fuso orario locale (es. Europe/Rome)
+        <input class="settings-input" type="text" id="timezone" value="{{ config.timezone | default('Europe/Rome') }}">
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== DIRETTA ===== -->
+  <section class="settings-section" data-advanced>
+    <h2 class="settings-h2">Diretta live (HLS)</h2>
+    <div class="settings-grid">
+      <label class="settings-label">Durata segmento HLS (secondi)
+        <input class="settings-input" type="number" id="live_hls_segment_seconds" min="1" value="{{ config.live_hls_segment_seconds | default(2) }}">
+      </label>
+      <label class="settings-label">Numero segmenti in lista (buffer)
+        <input class="settings-input" type="number" id="live_hls_list_size" min="2" value="{{ config.live_hls_list_size | default(6) }}">
+      </label>
+      <label class="settings-label">Cartella HLS (temporanea)
+        <input class="settings-input" type="text" id="hls_dir" value="{{ config.hls_dir | default('hls_cache') }}">
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== LIVEWALL ===== -->
+  <section class="settings-section">
+    <h2 class="settings-h2">Livewall</h2>
+    <p class="settings-hint">Inserisci gli id delle telecamere da visualizzare in ciascun wall, separati da virgola.</p>
+    <div class="settings-grid">
+      <label class="settings-label">Livewall 1 (id telecamere)
+        <input class="settings-input" type="text" id="livewall_1" value="{{ (config.live_walls or {}).get('1', [1,2,3,4]) | join(', ') }}">
+      </label>
+      <label class="settings-label">Livewall 2 (id telecamere)
+        <input class="settings-input" type="text" id="livewall_2" value="{{ (config.live_walls or {}).get('2', [5,6,7,8]) | join(', ') }}">
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== HTTPS ===== -->
+  <section class="settings-section" data-advanced>
+    <h2 class="settings-h2">HTTPS</h2>
+    <div class="settings-grid">
+      <label class="settings-label settings-label--check">
+        <input type="checkbox" id="https_enabled" {% if config.https and config.https.enabled %}checked{% endif %}>
+        Abilita HTTPS
+      </label>
+      <label class="settings-label">Percorso certificato (cert.pem)
+        <input class="settings-input" type="text" id="https_cert" value="{{ (config.https or {}).get('cert', 'cert.pem') }}">
+      </label>
+      <label class="settings-label">Percorso chiave (key.pem)
+        <input class="settings-input" type="text" id="https_key" value="{{ (config.https or {}).get('key', 'key.pem') }}">
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== MANUTENZIONE ===== -->
+  <section class="settings-section settings-section--danger" data-advanced>
+    <h2 class="settings-h2">Manutenzione</h2>
+    <p class="settings-hint">
+      Riavvia una singola camera da remoto via SSH (stesse credenziali FTP già
+      configurate). Il riavvio è immediato: la diretta e la sincronizzazione
+      di quella camera si interrompono per qualche decina di secondi.
+    </p>
+    <div id="maintenance-list"></div>
+  </section>
+
+  <div class="settings-footer">
+    <button class="settings-save-btn" id="save-btn">Salva e riavvia</button>
+    <p class="settings-footer-note">Il server si riavvierà automaticamente dopo il salvataggio (~3 secondi). La pagina si ricaricherà da sola.</p>
+    <p class="settings-version">
+      <a href="{{ url_for('changelog') }}">v{{ app_version }}</a> · {{ app_version_date }}
+    </p>
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='settings.js') }}"></script>
+<script>
+  initSettings({{ config | tojson }});
+</script>
+</body>
+</html>

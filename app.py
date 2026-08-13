@@ -1,6 +1,8 @@
 import os
+import json
 import stat
 import secrets
+import subprocess
 import threading
 import time
 from datetime import timedelta
@@ -15,6 +17,19 @@ import config as cfg
 import db
 import indexer
 import live
+import ssh_util
+from changelog import CHANGELOG, APP_VERSION, APP_VERSION_DATE
+
+_MESI_IT = [
+    "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+    "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+]
+
+
+def _format_date_it(iso_date):
+    from datetime import datetime
+    d = datetime.strptime(iso_date, "%Y-%m-%d")
+    return f"{d.day} {_MESI_IT[d.month - 1]} {d.year}"
 
 app = Flask(__name__)
 # I template (.html) di default restano in cache in memoria finché il
@@ -121,6 +136,121 @@ def background_sync_loop():
 @app.route("/")
 def index():
     return render_template("index.html", cameras=cfg.CAMERAS, auth_enabled=cfg.AUTH.get("enabled", False))
+
+
+@app.route("/settings", methods=["GET"])
+def settings():
+    with open(cfg.CONFIG_PATH, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    return render_template(
+        "settings.html",
+        config=raw,
+        auth_enabled=cfg.AUTH.get("enabled", False),
+        app_version=APP_VERSION,
+        app_version_date=_format_date_it(APP_VERSION_DATE),
+    )
+
+
+@app.route("/changelog")
+def changelog():
+    entries = []
+    for e in CHANGELOG:
+        entries.append({**e, "date_formatted": _format_date_it(e["date"])})
+    return render_template(
+        "changelog.html",
+        entries=entries,
+        auth_enabled=cfg.AUTH.get("enabled", False),
+    )
+
+
+@app.route("/api/settings", methods=["POST"])
+def api_settings_save():
+    """Valida e salva il config.json, poi riavvia il servizio in background
+    (se in esecuzione sotto systemd) perché le modifiche abbiano effetto."""
+    try:
+        new_cfg = request.get_json(force=True)
+    except Exception:
+        return jsonify({"status": "error", "message": "JSON non valido"}), 400
+
+    errors = _validate_config(new_cfg)
+    if errors:
+        return jsonify({"status": "error", "message": "\n".join(errors)}), 400
+
+    # Non permettiamo mai di modificare la password di accesso da qui —
+    # quella si cambia solo con set_password.py da terminale.
+    try:
+        with open(cfg.CONFIG_PATH, "r", encoding="utf-8") as f:
+            original = json.load(f)
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Impossibile leggere config.json: {e}"}), 500
+
+    if "auth" in original:
+        # Preserva l'intero blocco auth dal config originale
+        new_cfg["auth"] = original["auth"]
+
+    # Preserva i valori cifrati delle password camera: se l'utente non le
+    # ha modificate (il frontend manda None per i campi password intatti),
+    # rimettiamo il valore originale (potenzialmente già cifrato).
+    orig_by_id = {c["id"]: c for c in original.get("cameras", [])}
+    for cam in new_cfg.get("cameras", []):
+        orig = orig_by_id.get(cam.get("id")) or {}
+        if not cam.get("password"):
+            cam["password"] = orig.get("password", "")
+        live = cam.get("live")
+        if live and not live.get("password"):
+            orig_live = orig.get("live") or {}
+            live["password"] = orig_live.get("password", "")
+
+    tmp_path = cfg.CONFIG_PATH + ".tmp"
+    try:
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(new_cfg, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        os.replace(tmp_path, cfg.CONFIG_PATH)
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Impossibile salvare config.json: {e}"}), 500
+
+    _restart_service_async()
+    return jsonify({"status": "ok", "message": "Configurazione salvata. Il server si sta riavviando..."})
+
+
+def _validate_config(c):
+    errors = []
+    if not isinstance(c.get("cameras"), list):
+        errors.append("'cameras' deve essere una lista.")
+    else:
+        ids = []
+        for i, cam in enumerate(c["cameras"]):
+            if not isinstance(cam.get("id"), int):
+                errors.append(f"Camera #{i+1}: 'id' deve essere un numero intero.")
+            elif cam["id"] in ids:
+                errors.append(f"Camera #{i+1}: id {cam['id']} duplicato.")
+            else:
+                ids.append(cam["id"])
+            if not cam.get("name"):
+                errors.append(f"Camera #{i+1}: 'name' non può essere vuoto.")
+            if not cam.get("host"):
+                errors.append(f"Camera #{i+1}: 'host' non può essere vuoto.")
+    if not isinstance(c.get("sync_interval_seconds"), int) or c["sync_interval_seconds"] < 5:
+        errors.append("'sync_interval_seconds' deve essere un intero >= 5.")
+    return errors
+
+
+def _restart_service_async():
+    """Tenta di riavviare l'unità systemd in background, senza bloccare la
+    risposta HTTP. Se il server non gira sotto systemd (es. avvio manuale
+    con python3 app.py), lo skip è silenzioso: l'utente dovrà riavviarlo
+    manualmente in quel caso."""
+    def _do():
+        time.sleep(1.5)  # lascia il tempo alla risposta di arrivare al browser
+        try:
+            subprocess.run(
+                ["sudo", "systemctl", "restart", "yicam-timeline"],
+                timeout=10, check=False, capture_output=True,
+            )
+        except Exception:
+            pass
+    threading.Thread(target=_do, daemon=True).start()
 
 
 @app.route("/wall/<int:group>")
@@ -293,6 +423,21 @@ def api_live_file(camera_id, filename):
     resp = send_from_directory(directory, filename)
     resp.headers["Cache-Control"] = "no-cache"
     return resp
+
+
+@app.route("/api/camera/<int:camera_id>/reboot", methods=["POST"])
+def api_camera_reboot(camera_id):
+    cam = next((c for c in cfg.CAMERAS if c["id"] == camera_id), None)
+    if not cam:
+        abort(404)
+    try:
+        ssh_util.reboot_camera(cam)
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": f"Impossibile contattare la camera via SSH: {e}",
+        }), 502
+    return jsonify({"status": "ok", "message": f"Comando di riavvio inviato a '{cam['name']}'."})
 
 
 @app.route("/api/sync", methods=["POST"])
