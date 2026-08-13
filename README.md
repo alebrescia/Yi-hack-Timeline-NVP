@@ -1,5 +1,7 @@
 # Yi-hack-Timeline-NVP
 
+<img width="75%" height="75%" alt="live_garden" src="https://github.com/user-attachments/assets/76d32c68-b182-4077-b92e-b8532b3acf97" />
+
 A lightweight self-hosted web server that connects over FTP to your Yi
 cameras running [yi-hack](https://github.com/roleoroleo) custom firmware,
 indexes the recordings it finds, and presents them as a scrollable daily
@@ -127,7 +129,7 @@ you already have at home.
 
 ## Screenshots
 
-*(Add your own screenshots here — desktop timeline, mobile view, live wall.)*
+<img width="40%" height="40%" alt="bzNjk4F3Ho" src="https://github.com/user-attachments/assets/e5d024b3-1941-498a-80ad-6eb17b21b906" /> <img width="40%" height="40%" alt="live_wall" src="https://github.com/user-attachments/assets/9f6ec07b-7263-449b-af86-908fc6c4823e" />
 
 ## Quick start
 
@@ -417,6 +419,8 @@ configuration needed — this mirrors 1:1 how the camera itself manages SD
 space (it deletes whole hours, not individual scattered files).
 
 ## Clip locking & download
+
+<img width="424" height="298" alt="lock_clip" src="https://github.com/user-attachments/assets/229ad434-f037-4504-afcf-117c7c8f884e" />
 
 On any clip in the timeline:
 - **Right-click** (desktop) or **long-press ~0.5s** (mobile, with a
